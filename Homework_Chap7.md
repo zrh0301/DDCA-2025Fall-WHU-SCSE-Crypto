@@ -108,10 +108,19 @@
       <td>xx</td>
       <td>1</td>
     </tr>
+    <tr>
+      <td> bne </td>
+      <td> 1110011 </td>
+      <td> 0 </td>
+      <td> 10 </td>
+      <td> 0 </td>
+      <td> 0 </td>
+      <td> x </td>
+      <td> 1 </td>
+      <td> 01 </td>
+      <td> 0 </td>
   </tbody>
 </table>
 
-- **bne**:
+- **bne**:当两个寄存器的值不同的时候，进行跳转。跳转的地址来自于$Extend$。只需要将beq修改一下即可：检查$func3$字段与ALU给出的$Zero$信号，若前者为001且后者为0,则$PCSrc$信号为1；否则为0。
 - **sra**:
-
-
