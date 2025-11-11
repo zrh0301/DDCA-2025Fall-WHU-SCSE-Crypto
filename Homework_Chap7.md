@@ -119,8 +119,52 @@
       <td> 1 </td>
       <td> 01 </td>
       <td> 0 </td>
+    </tr>
+    <tr>
+      <td> sra </td>
+      <td> 0110011 </td>
+      <td> 1 </td>
+      <td> xx </td>
+      <td> 0 </td>
+      <td> 0 </td>
+      <td> 00 </td>
+      <td> 0 </td>
+      <td> 10 </td>
+      <td> 0 </td>
+    </tr>
   </tbody>
 </table>
 
 - **bne**:当两个寄存器的值不同的时候，进行跳转。跳转的地址来自于$Extend$。只需要将beq修改一下即可：检查$func3$字段与ALU给出的$Zero$信号，若前者为001且后者为0,则$PCSrc$信号为1；否则为0。
-- **sra**:
+- **sra**:一条简单的R-type指令，只需要修改ALU译码器的真值表，将其扩展为4位的控制信号并新支持一下sra指令就行。下面尝试给出修改后的ALU实现。
+  
+  ```verilog
+  // ALU：组合逻辑，根据 ALUControl 执行运算
+  module ALU (
+      input  logic [31:0] A,
+      input  logic [31:0] B,
+      input  logic [2:0]  ALUControl,
+      output logic [31:0] Result,
+      output logic        Zero
+  );
+      always_comb begin
+          case (ALUControl)
+              3'b000: Result = A + B;      // add
+              3'b001: Result = A - B;      // sub
+              3'b010: Result = A & B;      // and
+              3'b011: Result = A | B;      // or
+              
+              
+              3'b100: Result = A >>> B[4:0]; // sra (Shift Right Arithmetic)
+              
+              3'b101: Result = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0; // slt (signed)
+              
+              default: Result = 32'd0;
+          endcase
+      end
+  
+      assign Zero = (Result == 32'd0);
+  endmodule
+  ```
+  
+  
