@@ -132,10 +132,47 @@
       <td> 10 </td>
       <td> 0 </td>
     </tr>
+    <tr>
+      <td> lbu </td>
+      <td> 0000011 </td>
+      <td> 1 </td>
+      <td> 00 </td>
+      <td> 1 </td>
+      <td> 0 </td>
+      <td> 01 </td>
+      <td> 0 </td>
+      <td> 00 </td>
+      <td> 0 </td>
+    </tr>
+    <tr>
+      <td> jalr </td>
+      <td> 1100111 </td>
+      <td> 1 </td>
+      <td> 11 </td>
+      <td> 1 </td>
+      <td> 0 </td>
+      <td> 10 </td>
+      <td> 0 </td>
+      <td> 00 </td>
+      <td> 1 </td>
+    </tr>
+    <tr>
+      <td> auipc </td>
+      <td> 0010111 </td>
+      <td> 1 </td>
+      <td> 100? </td>
+      <td> 1 </td>
+      <td> 0 </td>
+      <td> 00 </td>
+      <td> 0 </td>
+      <td> 00 </td>
+      <td> 0 </td>
+    </tr>
   </tbody>
 </table>
 
 - **bne**:当两个寄存器的值不同的时候，进行跳转。跳转的地址来自于$Extend$。只需要将beq修改一下即可：检查$func3$字段与ALU给出的$Zero$信号，若前者为001且后者为0,则$PCSrc$信号为1；否则为0。
+
 - **sra**:一条简单的R-type指令，只需要修改ALU译码器的真值表，将其扩展为4位的控制信号并新支持一下sra指令就行。下面尝试给出修改后的ALU实现。
   
   ```verilog
@@ -153,18 +190,50 @@
               3'b001: Result = A - B;      // sub
               3'b010: Result = A & B;      // and
               3'b011: Result = A | B;      // or
-              
-              
               3'b100: Result = A >>> B[4:0]; // sra (Shift Right Arithmetic)
-              
-              3'b101: Result = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0; // slt (signed)
-              
-              default: Result = 32'd0;
-          endcase
-      end
   
-      assign Zero = (Result == 32'd0);
+              3'b101: Result = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0; // slt (signed)
+  
+            default: Result = 32'd0;
+        endcase
+    end
+  
+    assign Zero = (Result == 32'd0);
+  
   endmodule
   ```
+
+- **lbu**:和lw类似，不过在读取内存的时候只读后8个bit。新增加一个控制信号$RDMode$：真值表如下
   
+  <table>
+  <th> func3 </th>
+  <th> RDMode </th>
+  <tr>
+      <td> 000
+      <td> 10
+  </tr>
+  <tr>
+      <td> 100 
+      <td> 00
+  </tr>
+  <tr>    
+      <td> 101
+      <td> 01
+  </tr>    
+  </table>
   
+  当$RDMode$为10时，正常读word；为00时，读一个byte；为01时，读half word（2个byte）
+
+- **jalr**:与jal指令不同之处仅在于，PC=rs1+imm。所以要修改$PCSrc$控制单元，将其扩展为2位：00表示PCPlus4，01表示PCTarget，10表示来自ALUResult。同时需要把ALUResult连线到最左侧的多路选择器。
+
+- **auipc**:这条指令似乎要扩展$immSrc$。具体来说，U类型指令立即数生成时应当取$Instr$的12-31位，并将低12位置0。
+
+# T7.7
+
+应当重新设计内存读单元。因为其在关键路径中会出现两次：更改后的单周期时间为：
+
+100+100+120+100+30=450ps。
+
+## T7.8
+
+ALU延迟减少20ps，整体的单周期时间也减少20ps到730ps。执行一亿条指令所需时间为$10^{11} \times 703\div 10^{12} = 73$秒
