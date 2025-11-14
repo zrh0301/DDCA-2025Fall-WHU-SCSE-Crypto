@@ -240,15 +240,15 @@ ALU延迟减少20ps，整体的单周期时间也减少20ps到730ps。执行一�
 
 ## T7.30
 
-![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.30.drawio.png)
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.30.PNG)
 
-第五时钟周期即为图中红色框的部分。寄存器操作有：读s2,s5；写s1
+寄存器操作有：读s2,s5；写s1
 
 ## T7.31
 
-![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.31.drawio.png)
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.31.PNG)
 
-同理，读寄存器s0,写寄存器s1
+寄存器操作有：读寄存器s0,写寄存器s1
 
 ## T7.32
 
@@ -274,3 +274,22 @@ ALU延迟减少20ps，整体的单周期时间也减少20ps到730ps。执行一�
 | **I6: and s2** |     |     |     |     |           | IF        | ID  | EX  | MEM | WB  |     |     |
 
 流水线图如上表所示。共需10个时钟周期，CPI=1.667
+
+## T7.38
+
+正常情况下，分支指令（如beq之类）会在EX段计算目标地址并判断是否跳转。此时流水线中可能已经放入两条指令，分别为PC+4和PC+8（下一条指令进入ID阶段，下两条指令进入IF阶段）。此时若发生跳转，则两条指令都应当被刷新，代价为两个时钟周期。而当分支判断前移至ID阶段时，只有一条指令进入流水线，代价降低至一个周期。修改后的数据通路如图所示
+
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.38.png)
+
+但此时，前移分支逻辑引入了一种新的数据冒险。考虑以下指令序列：
+
+```assembly
+lw   x5, 0(x10)  // 在MEM段才能读出x5的值
+beq  x5, x0, L1  // 在ID段就需要x5的值进行比较
+```
+
+- 当 `beq` 指令在ID段时，`lw` 指令在EX段。
+- `lw` 指令的数据要到MEM段结束时才从内存中读出。
+- 因此，`beq` 在ID段无法立即获得 `lw` 更新后的 `x5` 值。
+
+所以，需要引入新的nop：当此时ID段的指令是跳转指令、且源寄存器是当前EX段的lw指令的目标寄存器，则要nop一个周期。等到lw的结果送到对应的寄存器中，此时才能做正确的比较。
