@@ -237,3 +237,40 @@
 ## T7.8
 
 ALU延迟减少20ps，整体的单周期时间也减少20ps到730ps。执行一亿条指令所需时间为$10^{11} \times 703\div 10^{12} = 73$秒
+
+## T7.30
+
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.30.drawio.png)
+
+第五时钟周期即为图中红色框的部分。寄存器操作有：读s2,s5；写s1
+
+## T7.31
+
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.31.drawio.png)
+
+同理，读寄存器s0,写寄存器s1
+
+## T7.32
+
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.32.drawio.png)
+
+红色方框内为Stall的部分，是由于所读寄存器的值尚未写入造成的。
+
+## T7.33
+
+![](/home/zrheng/Documents/DDCA2025Fall/Homework_Chap7/T7.33.drawio.png)
+
+同上题
+
+## T7.34
+
+| 时钟周期           | 1   | 2   | 3   | 4   | 5         | 6         | 7   | 8   | 9   | 10  | 11  | 12  |
+| -------------- | --- | --- | --- | --- | --------- | --------- | --- | --- | --- | --- | --- | --- |
+| **I1: addi**   | IF  | ID  | EX  | MEM | WB        |           |     |     |     |     |     |     |
+| **I2: lw s2**  |     | IF  | ID  | EX  | MEM       | WB        |     |     |     |     |     |     |
+| **I3: lw s5**  |     |     | IF  | ID  | **stall** | EX        | MEM | WB  |     |     |     |     |
+| **I4: add s3** |     |     |     | IF  | ID        | **stall** | EX  | MEM | WB  |     |     |     |
+| **I5: or s4**  |     |     |     |     | IF        | ID        | EX  | MEM | WB  |     |     |     |
+| **I6: and s2** |     |     |     |     |           | IF        | ID  | EX  | MEM | WB  |     |     |
+
+流水线图如上表所示。共需10个时钟周期，CPI=1.667
